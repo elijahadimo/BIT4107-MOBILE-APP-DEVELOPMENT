@@ -23,106 +23,116 @@ class _LandingPageState extends State<LandingPage> {
     final cms = context.watch<CmsProvider>().content;
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const Icon(Icons.local_shipping, size: 80, color: Colors.white),
-                    const SizedBox(height: 16),
-                    Text(
-                      cms.title,
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Colors.white),
-                      textAlign: TextAlign.center,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/icon.png',
+                          height: 100,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.local_shipping, size: 80, color: Colors.white),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          cms.title,
+                          style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          cms.subtitle,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white70),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      cms.subtitle,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white70),
+                  ),
+                  if (cms.notices.isNotEmpty)
+                    Container(
+                      height: 40,
+                      color: Colors.orange.withOpacity(0.2),
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: cms.notices.length,
+                        itemBuilder: (context, index) => Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text(cms.notices[index], style: const TextStyle(color: Colors.orange)),
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-              if (cms.notices.isNotEmpty)
-                Container(
-                  height: 40,
-                  color: Colors.orange.withOpacity(0.2),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: cms.notices.length,
-                    itemBuilder: (context, index) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(cms.notices[index], style: const TextStyle(color: Colors.orange)),
+                  Card(
+                    margin: const EdgeInsets.all(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _trackingController,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter Tracking Number',
+                              prefixIcon: Icon(Icons.search),
+                              fillColor: Colors.black12,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _foundShipment = context.read<ShipmentProvider>().getShipmentByTrackingNumber(_trackingController.text);
+                                  _searched = true;
+                                });
+                              },
+                              child: const Text('TRACK SHIPMENT'),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ),
-              Card(
-                margin: const EdgeInsets.all(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  if (_searched)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: context.watch<ShipmentProvider>().error != null
+                          ? Card(
+                              child: ListTile(
+                                leading: const Icon(Icons.warning, color: Colors.orange),
+                                title: Text(context.read<ShipmentProvider>().error!),
+                              ),
+                            )
+                          : (_foundShipment != null
+                              ? _buildShipmentTimeline(_foundShipment!)
+                              : const Card(
+                                  child: ListTile(
+                                    leading: Icon(Icons.error, color: Colors.red),
+                                    title: Text('Shipment not found'),
+                                    subtitle: Text('Please check the tracking number and try again.'),
+                                  ),
+                                )),
+                    ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      TextField(
-                        controller: _trackingController,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter Tracking Number',
-                          prefixIcon: Icon(Icons.search),
-                          fillColor: Colors.black12,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _foundShipment = context.read<ShipmentProvider>().getShipmentByTrackingNumber(_trackingController.text);
-                              _searched = true;
-                            });
-                          },
-                          child: const Text('TRACK SHIPMENT'),
-                        ),
+                      const Text("Are you a staff member? "),
+                      TextButton(
+                        onPressed: () => context.push('/login'),
+                        child: const Text('Login here', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
-                ),
-              ),
-              if (_searched)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: context.watch<ShipmentProvider>().error != null
-                    ? Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.warning, color: Colors.orange),
-                          title: Text(context.read<ShipmentProvider>().error!),
-                        ),
-                      )
-                    : (_foundShipment != null 
-                        ? _buildShipmentTimeline(_foundShipment!)
-                        : const Card(
-                            child: ListTile(
-                              leading: Icon(Icons.error, color: Colors.red),
-                              title: Text('Shipment not found'),
-                              subtitle: Text('Please check the tracking number and try again.'),
-                            ),
-                          )),
-                ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Are you a staff member? "),
-                  TextButton(
-                    onPressed: () => context.push('/login'),
-                    child: const Text('Login here', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

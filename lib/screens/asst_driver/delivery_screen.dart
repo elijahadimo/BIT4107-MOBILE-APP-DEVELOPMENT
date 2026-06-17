@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -9,7 +10,7 @@ import '../../providers/shipment_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math';
-import 'dart:io';
+import 'dart:io' as io;
 
 class DeliveryScreen extends StatefulWidget {
   final Shipment shipment;
@@ -29,8 +30,8 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
 
   bool _isLocationVerified = false;
   bool _isLoading = false;
-  File? _receiverPhoto;
-  File? _idPhoto;
+  XFile? _receiverPhoto;
+  XFile? _idPhoto;
 
   final ImagePicker _picker = ImagePicker();
 
@@ -49,9 +50,9 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     if (image != null) {
       setState(() {
         if (isId) {
-          _idPhoto = File(image.path);
+          _idPhoto = image;
         } else {
-          _receiverPhoto = File(image.path);
+          _receiverPhoto = image;
         }
       });
     }
@@ -205,7 +206,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     );
   }
 
-  Widget _buildPhotoBox({required String label, File? file, required VoidCallback onTap}) {
+  Widget _buildPhotoBox({required String label, XFile? file, required VoidCallback onTap}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -224,7 +225,9 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
             child: file != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(file, fit: BoxFit.cover),
+                    child: kIsWeb 
+                        ? Image.network(file.path, fit: BoxFit.cover)
+                        : Image.file(io.File(file.path), fit: BoxFit.cover),
                   )
                 : const Icon(Icons.camera_alt, color: Colors.white70, size: 40),
           ),

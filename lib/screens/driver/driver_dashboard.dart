@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import '../common/report_generator_widget.dart';
+import '../../models/user.dart';
 
 import '../../providers/trip_provider.dart';
 import '../../providers/shipment_provider.dart';
@@ -42,12 +44,19 @@ class DriverDashboard extends StatelessWidget {
                     children: [
                       const CircleAvatar(child: Icon(Icons.person)),
                       const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Active Trip: ${activeTrip.tripNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text('Route: ${activeTrip.route}'),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Active Trip: ${activeTrip.tripNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text('Route: ${activeTrip.route}'),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => context.push('/business-card'),
+                        icon: const Icon(Icons.badge, color: Colors.orange),
+                        tooltip: 'Digital ID',
                       ),
                     ],
                   ),
@@ -122,6 +131,8 @@ class DriverDashboard extends StatelessWidget {
                         label: const Text('Report Incident'),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                       ),
+                      const SizedBox(height: 24),
+                      const ReportGeneratorWidget(initialRole: UserRole.driver),
                     ],
                   ),
                 ),

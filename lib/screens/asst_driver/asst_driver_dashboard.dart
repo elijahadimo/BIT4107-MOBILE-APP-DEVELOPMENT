@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../common/report_generator_widget.dart';
+import '../../models/user.dart';
 
 import '../../providers/shipment_provider.dart';
 import '../../providers/branch_provider.dart';
@@ -38,6 +40,19 @@ class AsstDriverDashboard extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          ElevatedButton.icon(
+            onPressed: () => context.push('/business-card'),
+            icon: const Icon(Icons.badge),
+            label: const Text('MY DIGITAL ID'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.orange,
+              padding: const EdgeInsets.all(16),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const ReportGeneratorWidget(initialRole: UserRole.asstDriver),
+          const SizedBox(height: 24),
           const Text(
             'Deliveries at Unmanned Branches',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),

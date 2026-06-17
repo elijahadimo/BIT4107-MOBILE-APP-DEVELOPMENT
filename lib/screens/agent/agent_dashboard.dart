@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import './qr_scanner_screen.dart';
+import '../common/report_generator_widget.dart';
+import '../../models/user.dart';
 
 import '../../providers/shipment_provider.dart';
 import '../../providers/trip_provider.dart';
@@ -17,6 +19,7 @@ class AgentDashboard extends StatelessWidget {
     final shipmentProvider = context.watch<ShipmentProvider>();
     final authProvider = context.read<AuthProvider>();
     final myShipments = shipmentProvider.getShipmentsByBranch(authProvider.user?.branchId ?? '');
+    final shipmentsAtBranch = myShipments.where((s) => s.status == ShipmentStatus.arrived || s.status == ShipmentStatus.pending).length;
 
     return Scaffold(
       appBar: AppBar(
@@ -35,6 +38,8 @@ class AgentDashboard extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildBranchSummaryCard(authProvider.user?.branchId ?? 'Main', shipmentsAtBranch),
+          const SizedBox(height: 24),
           _buildActionButton(context, Icons.add_box, 'Create New Shipment', () => context.push('/agent/create-shipment')),
           const SizedBox(height: 12),
           _buildActionButton(context, Icons.file_download, 'Confirm Arrivals (Scan)', () => context.push('/agent/scanner', extra: ScannerMode.confirmArrival)),
@@ -46,6 +51,10 @@ class AgentDashboard extends StatelessWidget {
           _buildActionButton(context, Icons.local_shipping, 'Load Truck', () => context.push('/agent/load-truck')),
           const SizedBox(height: 12),
           _buildActionButton(context, Icons.inventory, 'Incoming Trips (Manual)', () => _showArrivedTripsDialog(context)),
+          const SizedBox(height: 12),
+          _buildActionButton(context, Icons.badge, 'My Digital ID', () => context.push('/business-card')),
+          const SizedBox(height: 24),
+          const ReportGeneratorWidget(initialRole: UserRole.agent),
           const SizedBox(height: 24),
           const Text('Recent Shipments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 8),
@@ -74,6 +83,44 @@ class AgentDashboard extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon),
       label: Text(label),
+    );
+  }
+
+  Widget _buildBranchSummaryCard(String branchId, int count) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Current Branch', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(branchId, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ],
+                ),
+                const Icon(Icons.warehouse, color: Colors.orange, size: 30),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Shipments in Stock:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
+                  child: Text(count.toString(), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

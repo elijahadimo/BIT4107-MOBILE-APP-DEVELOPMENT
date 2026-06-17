@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/shipment.dart';
 import 'package:intl/intl.dart';
+import 'dart:io' as io;
 
 class PdfService {
   static Future<Uint8List> generateReceipt(Shipment shipment) async {
@@ -199,13 +200,13 @@ class PdfService {
                   children: [
                     pw.Column(
                       children: [
-                        pw.Container(width: 150, border: const pw.Border(bottom: pw.BorderSide())),
+                        pw.Container(width: 150, decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide()))),
                         pw.Text('Agent Signature'),
                       ],
                     ),
                     pw.Column(
                       children: [
-                        pw.Container(width: 150, border: const pw.Border(bottom: pw.BorderSide())),
+                        pw.Container(width: 150, decoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide()))),
                         pw.Text('Driver Signature'),
                       ],
                     ),
@@ -221,9 +222,89 @@ class PdfService {
     return pdf.save();
   }
 
+  static Future<Uint8List> generateDriverReport(List<dynamic> trips, String driverName, String title) async {
+    final pdf = pw.Document();
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        header: (context) => pw.Column(
+          children: [
+            pw.Center(child: pw.Text('DRIVER ACTIVITY REPORT', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold))),
+            pw.Center(child: pw.Text('Driver: $driverName')),
+            pw.Center(child: pw.Text(title)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+          ],
+        ),
+        build: (context) => [
+          pw.TableHelper.fromTextArray(
+            headers: ['Date', 'Trip Number', 'Route', 'Truck', 'Status'],
+            data: trips.map((t) => [
+              DateFormat('yyyy-MM-dd').format(t.departureTime),
+              t.tripNumber,
+              t.route,
+              t.truckPlate,
+              t.status.name.toUpperCase(),
+            ]).toList(),
+          ),
+        ],
+      ),
+    );
+    return pdf.save();
+  }
+
+  static Future<Uint8List> generateSummaryReport(List<Shipment> shipments, String title, {String? branchName}) async {
+    final pdf = pw.Document();
+    final totalRevenue = shipments.fold(0.0, (sum, s) => sum + s.shippingCost);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4.landscape,
+        header: (context) => pw.Column(
+          children: [
+            pw.Center(child: pw.Text('KAPOETA LOGISTICS - SUMMARY REPORT', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold))),
+            if (branchName != null) pw.Center(child: pw.Text('Branch: $branchName')),
+            pw.Center(child: pw.Text(title)),
+            pw.SizedBox(height: 10),
+            pw.Divider(),
+          ],
+        ),
+        build: (context) => [
+          pw.TableHelper.fromTextArray(
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            headers: ['Date', 'Tracking No', 'Sender', 'Receiver', 'Item', 'Cost'],
+            data: shipments.map((s) => [
+              DateFormat('yyyy-MM-dd').format(s.createdAt),
+              s.trackingNumber,
+              s.senderName,
+              s.receiverName,
+              s.itemDescription,
+              '${s.shippingCost} ${s.currency}',
+            ]).toList(),
+          ),
+          pw.SizedBox(height: 20),
+          pw.Container(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Text('TOTAL REVENUE: ${totalRevenue.toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          ),
+        ],
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 10)),
+        ),
+      ),
+    );
+
+    return pdf.save();
+  }
+
   static Future<void> saveAndShare(Uint8List bytes, String fileName) async {
+    if (kIsWeb) {
+      await Printing.sharePdf(bytes: bytes, filename: fileName);
+      return;
+    }
     final directory = await getTemporaryDirectory();
-    final file = File('${directory.path}/$fileName');
+    final file = io.File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes);
 
     await Share.shareXFiles([XFile(file.path)], text: 'Document from Kapoeta Logistics');

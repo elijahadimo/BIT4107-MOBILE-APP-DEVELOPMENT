@@ -86,6 +86,33 @@ class ShipmentProvider extends ChangeNotifier {
 
   // ... (tracking number and getters) ...
 
+  String generateTrackingNumber(String branchName) {
+    final year = DateTime.now().year;
+    final prefix = branchName.substring(0, 3).toUpperCase();
+    final count = (_shipments.length + 1).toString().padLeft(3, '0');
+    return 'KL-$prefix-$year-$count';
+  }
+
+  Shipment? getShipmentByTrackingNumber(String trackingNumber) {
+    try {
+      return _shipments.firstWhere((s) => s.trackingNumber == trackingNumber);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  List<Shipment> getShipmentsByBranch(String branchId) {
+    return _shipments.where((s) => s.originBranchId == branchId || s.destinationBranchId == branchId).toList();
+  }
+
+  List<Shipment> getShipmentsByDateRange(DateTime start, DateTime end, {String? branchId}) {
+    return _shipments.where((s) {
+      final matchesDate = s.createdAt.isAfter(start) && s.createdAt.isBefore(end.add(const Duration(days: 1)));
+      final matchesBranch = branchId == null || s.originBranchId == branchId || s.destinationBranchId == branchId;
+      return matchesDate && matchesBranch;
+    }).toList();
+  }
+
   Future<void> updateShipmentStatus(String id, ShipmentStatus status, {String? deliveredBy, double? amountCollected}) async {
     final index = _shipments.indexWhere((s) => s.id == id);
     if (index != -1) {

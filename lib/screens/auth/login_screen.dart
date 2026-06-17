@@ -24,7 +24,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.lock, size: 64, color: Colors.white),
+            Image.asset(
+              'assets/images/icon.png',
+              height: 80,
+              errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.lock, size: 64, color: Colors.white),
+            ),
             const SizedBox(height: 32),
             TextField(
               controller: _phoneController,

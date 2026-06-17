@@ -14,9 +14,20 @@ import 'theme/app_theme.dart';
 import 'utils/router.dart';
 import 'services/storage_service.dart';
 import 'services/sync_service.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set preferred orientations (Portrait only for mobile)
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Use path URL strategy (removes # from URL on web)
+  usePathUrlStrategy();
   
   // Initialize Storage Service
   final storageService = await StorageService.init();
@@ -27,6 +38,12 @@ void main() async {
     storageService: storageService,
     connectivityProvider: connectivityProvider,
   );
+
+  // Global error handling
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    // You could send this to a service like Sentry or Firebase Crashlytics here
+  };
   
   runApp(
     MultiProvider(

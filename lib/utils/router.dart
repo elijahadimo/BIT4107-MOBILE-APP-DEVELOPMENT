@@ -19,6 +19,7 @@ import '../screens/driver/report_incident_screen.dart';
 import '../screens/asst_driver/asst_driver_dashboard.dart';
 import '../screens/asst_driver/delivery_screen.dart';
 import '../screens/customer/landing_page.dart';
+import '../screens/common/business_card_screen.dart';
 import '../models/user.dart';
 import '../models/shipment.dart';
 
@@ -60,6 +61,10 @@ class AppRouter {
       GoRoute(
         path: '/',
         builder: (context, state) => const LandingPage(),
+      ),
+      GoRoute(
+        path: '/business-card',
+        builder: (context, state) => const BusinessCardScreen(),
       ),
       GoRoute(
         path: '/chat',

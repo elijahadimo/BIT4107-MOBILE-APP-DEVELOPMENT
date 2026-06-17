@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'exceptions.dart';
 
@@ -26,7 +25,7 @@ class ApiService {
         headers: _getHeaders(token),
       );
       return _processResponse(response);
-    } on SocketException {
+    } catch (e) {
       throw NetworkException();
     }
   }
@@ -39,7 +38,7 @@ class ApiService {
         body: json.encode(body),
       );
       return _processResponse(response);
-    } on SocketException {
+    } catch (e) {
       throw NetworkException();
     }
   }

@@ -2,13 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kapoeta_logistics/providers/shipment_provider.dart';
 import 'package:kapoeta_logistics/models/shipment.dart';
 import 'package:uuid/uuid.dart';
+import 'mock_storage_service.dart';
 
 void main() {
   group('ShipmentProvider Tests', () {
     late ShipmentProvider shipmentProvider;
+    late MockStorageService mockStorage;
 
     setUp(() {
-      shipmentProvider = ShipmentProvider();
+      mockStorage = MockStorageService();
+      shipmentProvider = ShipmentProvider(storageService: mockStorage);
     });
 
     test('Create and retrieve shipment', () async {

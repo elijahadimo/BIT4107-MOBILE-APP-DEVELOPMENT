@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kapoeta_logistics/providers/auth_provider.dart';
 import 'package:kapoeta_logistics/models/user.dart';
+import 'mock_storage_service.dart';
 
 void main() {
   group('AuthProvider Tests', () {
     late AuthProvider authProvider;
+    late MockStorageService mockStorage;
 
     setUp(() {
-      authProvider = AuthProvider();
+      mockStorage = MockStorageService();
+      authProvider = AuthProvider(storageService: mockStorage);
     });
 
     test('Initial state should be unauthenticated', () {

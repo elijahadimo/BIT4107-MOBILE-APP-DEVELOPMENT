@@ -53,18 +53,12 @@ dependencies:
   pdf: ^3.12.0
   printing: ^5.14.3
   share_plus: ^12.0.2
+  flutter_web_plugins:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.13.1
-
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/images/icon.png"
-  adaptive_icon_background: "#87CEEB"
-  adaptive_icon_foreground: "assets/images/icon.png"
 
 flutter:
   uses-material-design: true

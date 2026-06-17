@@ -91,4 +91,12 @@ class TripProvider extends ChangeNotifier {
   List<Trip> getIncomingTrips(String branchId) {
     return _trips.where((t) => t.arrivalBranchId == branchId && t.status != TripStatus.completed).toList();
   }
+
+  List<Trip> getTripsByDateRange(DateTime start, DateTime end, {String? driverId}) {
+    return _trips.where((t) {
+      final matchesDate = t.departureTime.isAfter(start) && t.departureTime.isBefore(end.add(const Duration(days: 1)));
+      final matchesDriver = driverId == null || t.driverId == driverId;
+      return matchesDate && matchesDriver;
+    }).toList();
+  }
 }

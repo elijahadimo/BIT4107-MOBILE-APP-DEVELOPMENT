@@ -1,11 +1,11 @@
 {
-    "name": "kapoeta_logistics",
-    "short_name": "kapoeta_logistics",
+    "name": "Kapoeta Logistics",
+    "short_name": "Kapoeta",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Kapoeta Logistics Management and Tracking System.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
