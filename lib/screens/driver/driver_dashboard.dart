@@ -105,6 +105,24 @@ class DriverDashboard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      Card(
+                        color: tripProvider.isTrackingActive ? Colors.green.shade50 : null,
+                        child: SwitchListTile(
+                          title: const Text('Live Tracking Activation', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(tripProvider.isTrackingActive 
+                            ? 'GPS Tracking is ON' 
+                            : 'Activate GPS tracking when you start your journey'),
+                          value: tripProvider.isTrackingActive,
+                          onChanged: activeTrip.status == TripStatus.inTransit 
+                            ? (val) => tripProvider.toggleLiveTracking(activeTrip.id)
+                            : null,
+                          secondary: Icon(
+                            Icons.location_on, 
+                            color: tripProvider.isTrackingActive ? Colors.green : Colors.grey
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       ElevatedButton.icon(
                         onPressed: () {
                           // Update location logic

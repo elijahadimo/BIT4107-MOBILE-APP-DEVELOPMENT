@@ -11,6 +11,7 @@ import '../screens/admin/cms_edit_screen.dart';
 import '../screens/admin/chat_list_screen.dart';
 import '../screens/agent/agent_dashboard.dart';
 import '../screens/agent/create_shipment_screen.dart';
+import '../screens/agent/bulk_shipment_screen.dart';
 import '../screens/agent/load_truck_screen.dart';
 import '../screens/agent/shipment_detail_screen.dart';
 import '../screens/agent/qr_scanner_screen.dart';
@@ -107,6 +108,10 @@ class AppRouter {
           GoRoute(
             path: 'create-shipment',
             builder: (context, state) => const CreateShipmentScreen(),
+          ),
+          GoRoute(
+            path: 'bulk-shipment',
+            builder: (context, state) => const BulkShipmentScreen(),
           ),
           GoRoute(
             path: 'load-truck',

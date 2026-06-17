@@ -40,7 +40,13 @@ class AgentDashboard extends StatelessWidget {
         children: [
           _buildBranchSummaryCard(authProvider.user?.branchId ?? 'Main', shipmentsAtBranch),
           const SizedBox(height: 24),
-          _buildActionButton(context, Icons.add_box, 'Create New Shipment', () => context.push('/agent/create-shipment')),
+          Row(
+            children: [
+              Expanded(child: _buildActionButton(context, Icons.add_box, 'Single', () => context.push('/agent/create-shipment'))),
+              const SizedBox(width: 8),
+              Expanded(child: _buildActionButton(context, Icons.dynamic_feed, 'Bulk (1-N/N-1)', () => context.push('/agent/bulk-shipment'))),
+            ],
+          ),
           const SizedBox(height: 12),
           _buildActionButton(context, Icons.file_download, 'Confirm Arrivals (Scan)', () => context.push('/agent/scanner', extra: ScannerMode.confirmArrival)),
           const SizedBox(height: 12),

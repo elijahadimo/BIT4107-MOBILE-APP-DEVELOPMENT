@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/trip.dart';
 import '../services/storage_service.dart';
 
@@ -6,6 +8,10 @@ class TripProvider extends ChangeNotifier {
   final List<Trip> _trips = [];
   bool _isLoading = false;
   final StorageService storageService;
+  
+  StreamSubscription<Position>? _positionSubscription;
+  bool _isTrackingActive = false;
+  String? _activeTrackingTripId;
 
   TripProvider({required this.storageService}) {
     _loadCachedTrips();
@@ -13,6 +19,7 @@ class TripProvider extends ChangeNotifier {
 
   List<Trip> get trips => _trips;
   bool get isLoading => _isLoading;
+  bool get isTrackingActive => _isTrackingActive;
 
   void _loadCachedTrips() {
     final cachedData = storageService.getCachedData('cached_trips');
@@ -43,9 +50,6 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Mock API call simulation
-      // await api.post('/trips', trip.toJson());
-      
       _trips.add(trip);
       await storageService.cacheData('cached_trips', _trips.map((t) => t.toJson()).toList());
     } catch (e) {
@@ -67,6 +71,51 @@ class TripProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> toggleLiveTracking(String tripId) async {
+    if (_isTrackingActive) {
+      await stopLiveTracking();
+    } else {
+      await startLiveTracking(tripId);
+    }
+  }
+
+  Future<void> startLiveTracking(String tripId) async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    
+    if (permission == LocationPermission.deniedForever) return;
+
+    _activeTrackingTripId = tripId;
+    _isTrackingActive = true;
+    notifyListeners();
+
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      updateLocation(tripId, position.latitude, position.longitude);
+    });
+  }
+
+  Future<void> stopLiveTracking() async {
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
+    _isTrackingActive = false;
+    _activeTrackingTripId = null;
+    notifyListeners();
+  }
+
   void updateLocation(String tripId, double lat, double lng) {
     final index = _trips.indexWhere((t) => t.id == tripId);
     if (index != -1) {
@@ -75,6 +124,10 @@ class TripProvider extends ChangeNotifier {
         currentLongitude: lng,
       );
       storageService.cacheData('cached_trips', _trips.map((t) => t.toJson()).toList());
+      
+      // Simulating API call for live tracking
+      // _apiService.post('/trips/$tripId/location', {'lat': lat, 'lng': lng});
+      
       notifyListeners();
     }
   }
@@ -98,5 +151,11 @@ class TripProvider extends ChangeNotifier {
       final matchesDriver = driverId == null || t.driverId == driverId;
       return matchesDate && matchesDriver;
     }).toList();
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
   }
 }

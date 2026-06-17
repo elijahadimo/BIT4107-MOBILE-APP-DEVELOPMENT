@@ -22,14 +22,37 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
   final _senderPhoneController = TextEditingController();
   final _receiverNameController = TextEditingController();
   final _receiverPhoneController = TextEditingController();
-  final _itemDescriptionController = TextEditingController();
-  final _weightController = TextEditingController();
+  final _itemDescController = TextEditingController();
+  final _qtyTypeController = TextEditingController(text: 'Sacks');
+  final _qtyController = TextEditingController(text: '1');
+  final _unitWeightController = TextEditingController(text: '0');
+  final _unitValueController = TextEditingController(text: '0');
   final _costController = TextEditingController();
-  final _valueController = TextEditingController();
 
   String? _destinationBranchId;
   String _currency = 'KES';
   PaymentMethod _paymentMethod = PaymentMethod.prepaid;
+
+  double _totalWeight = 0;
+  double _totalValue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _qtyController.addListener(_calculateTotals);
+    _unitWeightController.addListener(_calculateTotals);
+    _unitValueController.addListener(_calculateTotals);
+  }
+
+  void _calculateTotals() {
+    final qty = double.tryParse(_qtyController.text) ?? 0;
+    final w = double.tryParse(_unitWeightController.text) ?? 0;
+    final v = double.tryParse(_unitValueController.text) ?? 0;
+    setState(() {
+      _totalWeight = qty * w;
+      _totalValue = qty * v;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +61,7 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
     final originBranch = branchProvider.getBranchById(authProvider.user?.branchId ?? '1');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('New Shipment')),
+      appBar: AppBar(title: const Text('New Smart Shipment')),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -46,69 +69,90 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle('Sender Information'),
-              _buildTextField(_senderNameController, 'Sender Name'),
-              _buildTextField(_senderPhoneController, 'Sender Phone', keyboardType: TextInputType.phone),
+              _buildSectionTitle('SENDER & RECEIVER'),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField(_senderNameController, 'Sender Name')),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildTextField(_receiverNameController, 'Receiver Name')),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField(_senderPhoneController, 'Sender Phone', keyboardType: TextInputType.phone)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildTextField(_receiverPhoneController, 'Receiver Phone', keyboardType: TextInputType.phone)),
+                ],
+              ),
               
               const SizedBox(height: 16),
-              _buildSectionTitle('Receiver Information'),
-              _buildTextField(_receiverNameController, 'Receiver Name'),
-              _buildTextField(_receiverPhoneController, 'Receiver Phone', keyboardType: TextInputType.phone),
-              
-              const SizedBox(height: 16),
-              _buildSectionTitle('Destination'),
+              _buildSectionTitle('DESTINATION'),
               DropdownButtonFormField<String>(
-                initialValue: _destinationBranchId,
+                value: _destinationBranchId,
                 decoration: const InputDecoration(hintText: 'Select Destination Branch'),
-                items: branchProvider.branches.map((b) => DropdownMenuItem(
-                  value: b.id,
-                  child: Text(b.name),
-                )).toList(),
+                items: branchProvider.branches.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
                 onChanged: (val) => setState(() => _destinationBranchId = val),
                 validator: (val) => val == null ? 'Required' : null,
               ),
 
-              const SizedBox(height: 16),
-              _buildSectionTitle('Item Details'),
-              _buildTextField(_itemDescriptionController, 'Item Description'),
+              const SizedBox(height: 24),
+              _buildSectionTitle('GOODS & QUANTITY'),
+              _buildTextField(_itemDescController, 'Item Description (e.g. Cement)'),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(_weightController, 'Weight (kg)', keyboardType: TextInputType.number)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildTextField(_valueController, 'Goods Value', keyboardType: TextInputType.number)),
+                  Expanded(flex: 2, child: _buildTextField(_qtyTypeController, 'Qty Type (Sacks, Boxes)')),
+                  const SizedBox(width: 8),
+                  Expanded(flex: 1, child: _buildTextField(_qtyController, 'Total Qty', keyboardType: TextInputType.number)),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(child: _buildTextField(_unitWeightController, 'Weight per Unit (Kg)', keyboardType: TextInputType.number)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildTextField(_unitValueController, 'Value per Unit', keyboardType: TextInputType.number)),
                 ],
               ),
 
+              // Summary Box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Column(
+                  children: [
+                    _buildSummaryLine('Calculated Total Weight:', '$_totalWeight Kg'),
+                    _buildSummaryLine('Calculated Total Value:', '$_totalValue $_currency'),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 16),
-              _buildSectionTitle('Payment'),
+              _buildSectionTitle('PAYMENT & FEES'),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(_costController, 'Shipping Cost', keyboardType: TextInputType.number)),
-                  const SizedBox(width: 16),
+                  Expanded(child: _buildTextField(_costController, 'Shipping Fee', keyboardType: TextInputType.number)),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      initialValue: _currency,
+                      value: _currency,
                       items: ['KES', 'SSP', 'USD'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                       onChanged: (val) => setState(() => _currency = val!),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
               DropdownButtonFormField<PaymentMethod>(
-                initialValue: _paymentMethod,
+                value: _paymentMethod,
                 decoration: const InputDecoration(labelText: 'Payment Method'),
-                items: PaymentMethod.values.map((m) => DropdownMenuItem(
-                  value: m,
-                  child: Text(m.name.toUpperCase()),
-                )).toList(),
+                items: PaymentMethod.values.map((m) => DropdownMenuItem(value: m, child: Text(m.name.toUpperCase()))).toList(),
                 onChanged: (val) => setState(() => _paymentMethod = val!),
               ),
 
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 55,
                 child: ElevatedButton(
                   onPressed: () => _submit(context, originBranch?.name ?? 'NAI'),
                   child: const Text('CREATE SHIPMENT'),
@@ -121,10 +165,23 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
     );
   }
 
+  Widget _buildSummaryLine(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.orange)),
     );
   }
 
@@ -133,7 +190,7 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextFormField(
         controller: controller,
-        decoration: InputDecoration(hintText: label),
+        decoration: InputDecoration(labelText: label, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
         keyboardType: keyboardType,
         validator: (val) => val == null || val.isEmpty ? 'Required' : null,
       ),
@@ -145,6 +202,8 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
       final shipmentProvider = context.read<ShipmentProvider>();
       final authProvider = context.read<AuthProvider>();
       
+      final detailedDesc = "${_itemDescController.text} (${_qtyController.text} ${_qtyTypeController.text})";
+
       final shipment = Shipment(
         id: const Uuid().v4(),
         trackingNumber: shipmentProvider.generateTrackingNumber(branchName),
@@ -152,12 +211,12 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
         senderPhone: _senderPhoneController.text,
         receiverName: _receiverNameController.text,
         receiverPhone: _receiverPhoneController.text,
-        itemDescription: _itemDescriptionController.text,
-        weight: double.parse(_weightController.text),
+        itemDescription: detailedDesc,
+        weight: _totalWeight,
         originBranchId: authProvider.user?.branchId ?? '1',
         destinationBranchId: _destinationBranchId!,
         shippingCost: double.parse(_costController.text),
-        goodsValue: double.parse(_valueController.text),
+        goodsValue: _totalValue,
         currency: _currency,
         paymentMethod: _paymentMethod,
         status: ShipmentStatus.pending,
@@ -167,7 +226,6 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
 
       await shipmentProvider.createShipment(shipment);
       if (!context.mounted) return;
-      
       _showSuccessDialog(context, shipment);
     }
   }
@@ -178,51 +236,9 @@ class _CreateShipmentScreenState extends State<CreateShipmentScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: const Text('Shipment Created!'),
-        content: Text('Tracking Number: ${shipment.trackingNumber}\n\nWhat would you like to do next?'),
+        content: Text('Tracking Number: ${shipment.trackingNumber}\n\nWeight: ${shipment.weight} Kg'),
         actions: [
-          TextButton(
-            onPressed: () async {
-              final bytes = await PdfService.generateReceipt(shipment);
-              await PdfService.printDoc(bytes);
-            },
-            child: const Text('PRINT RECEIPT'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final bytes = await PdfService.generateReceipt(shipment);
-              await PdfService.saveAndShare(bytes, 'Receipt_${shipment.trackingNumber}.pdf');
-            },
-            child: const Text('SHARE RECEIPT'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final bytes = await PdfService.generateWaybill(shipment);
-              await PdfService.saveAndShare(bytes, 'Waybill_${shipment.trackingNumber}.pdf');
-            },
-            child: const Text('SHARE WAYBILL'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final bytes = await PdfService.generateQrLabel(shipment);
-              await PdfService.printDoc(bytes);
-            },
-            child: const Text('PRINT QR LABEL'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.pop();
-              context.push('/agent/load-truck');
-            },
-            child: const Text('ASSIGN TO TRIP'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.pop();
-            },
-            child: const Text('DONE'),
-          ),
+          TextButton(onPressed: () => context.pop(), child: const Text('DONE')),
         ],
       ),
     );
