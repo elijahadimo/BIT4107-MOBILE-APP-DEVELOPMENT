@@ -31,6 +31,8 @@ class AdminDashboard extends StatelessWidget {
           _buildCard(context, Icons.edit, 'CMS', () => context.push('/admin/cms')),
           _buildCard(context, Icons.chat, 'Chat', () => context.push('/chat')),
           _buildCard(context, Icons.attach_money, 'Financial', () => context.push('/admin/financial')),
+          _buildCard(context, Icons.map, 'Fleet Map', () => context.push('/admin/fleet-map')),
+          _buildCard(context, Icons.list_alt, 'Ledger', () => context.push('/admin/ledger')),
         ],
       ),
     );

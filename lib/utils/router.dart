@@ -4,6 +4,8 @@ import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/admin/admin_dashboard.dart';
 import '../screens/admin/financial_dashboard.dart';
+import '../screens/admin/fleet_map_screen.dart';
+import '../screens/admin/shipment_ledger_screen.dart';
 import '../screens/admin/user_management_screen.dart';
 import '../screens/admin/branch_management_screen.dart';
 import '../screens/admin/complaint_management_screen.dart';
@@ -82,6 +84,14 @@ class AppRouter {
           GoRoute(
             path: 'financial',
             builder: (context, state) => const FinancialDashboard(),
+          ),
+          GoRoute(
+            path: 'fleet-map',
+            builder: (context, state) => const FleetMapScreen(),
+          ),
+          GoRoute(
+            path: 'ledger',
+            builder: (context, state) => const ShipmentLedgerScreen(),
           ),
           GoRoute(
             path: 'users',

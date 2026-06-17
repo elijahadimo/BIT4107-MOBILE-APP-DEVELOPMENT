@@ -7,6 +7,8 @@ import '../../providers/branch_provider.dart';
 import '../../providers/shipment_provider.dart';
 import 'package:go_router/go_router.dart';
 
+enum BulkMode { oneToMany, manyToOne, oneToOne }
+
 class BulkShipmentScreen extends StatefulWidget {
   const BulkShipmentScreen({super.key});
 
@@ -17,9 +19,13 @@ class BulkShipmentScreen extends StatefulWidget {
 class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
   final _formKey = GlobalKey<FormState>();
   
-  bool _isOneToMany = true; 
-  final _commonNameController = TextEditingController();
-  final _commonPhoneController = TextEditingController();
+  BulkMode _mode = BulkMode.oneToMany;
+  
+  final _senderNameController = TextEditingController();
+  final _senderPhoneController = TextEditingController();
+  final _receiverNameController = TextEditingController();
+  final _receiverPhoneController = TextEditingController();
+  
   final List<BulkItem> _items = [];
 
   String? _commonDestinationBranchId;
@@ -38,7 +44,7 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
     final originBranch = branchProvider.getBranchById(authProvider.user?.branchId ?? '1');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Smart Bulk Shipment')),
+      appBar: AppBar(title: const Text('Advanced Bulk Logistics')),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -46,8 +52,10 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTypeSelector(),
+              _buildModeSelector(),
               const SizedBox(height: 16),
+              
+              // Common Section
               Card(
                 color: Colors.white.withOpacity(0.05),
                 child: Padding(
@@ -55,12 +63,17 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle(_isOneToMany ? 'Common Sender' : 'Common Receiver'),
-                      _buildTextField(_commonNameController, 'Name'),
-                      _buildTextField(_commonPhoneController, 'Phone', keyboardType: TextInputType.phone),
-                      
-                      if (!_isOneToMany) ...[
-                        const SizedBox(height: 8),
+                      if (_mode == BulkMode.oneToMany || _mode == BulkMode.oneToOne) ...[
+                        _buildSectionTitle('Common Sender'),
+                        _buildTextField(_senderNameController, 'Sender Name'),
+                        _buildTextField(_senderPhoneController, 'Sender Phone', keyboardType: TextInputType.phone),
+                        const SizedBox(height: 16),
+                      ],
+                      if (_mode == BulkMode.manyToOne || _mode == BulkMode.oneToOne) ...[
+                        _buildSectionTitle('Common Receiver'),
+                        _buildTextField(_receiverNameController, 'Receiver Name'),
+                        _buildTextField(_receiverPhoneController, 'Receiver Phone', keyboardType: TextInputType.phone),
+                        const SizedBox(height: 16),
                         const Text('Destination Branch', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         DropdownButtonFormField<String>(
                           value: _commonDestinationBranchId,
@@ -82,7 +95,7 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSectionTitle(_isOneToMany ? 'Itemized Receivers' : 'Itemized Senders'),
+                  _buildSectionTitle('Itemized Goods List'),
                   ElevatedButton.icon(
                     onPressed: () => setState(() => _items.add(BulkItem(onChanged: () => setState(() {})))),
                     icon: const Icon(Icons.add, size: 18),
@@ -100,7 +113,7 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
                 height: 55,
                 child: ElevatedButton(
                   onPressed: () => _submit(context, originBranch?.name ?? 'NAI'),
-                  child: Text('PROCESS ${_items.length} SHIPMENTS'),
+                  child: Text('PROCESS ${_items.length} LOGISTICS ENTRIES'),
                 ),
               ),
               const SizedBox(height: 24),
@@ -111,36 +124,29 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
     );
   }
 
-  Widget _buildTypeSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _isOneToMany = true),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _isOneToMany ? Colors.orange : Colors.white10,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8)),
-              ),
-              child: const Center(child: Text('One Sender → Many Receivers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            ),
-          ),
-        ),
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _isOneToMany = false),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: !_isOneToMany ? Colors.orange : Colors.white10,
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8)),
-              ),
-              child: const Center(child: Text('Many Senders → One Receiver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-            ),
-          ),
-        ),
-      ],
+  Widget _buildModeSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _modeButton('1-to-N', BulkMode.oneToMany),
+          const SizedBox(width: 4),
+          _modeButton('N-to-1', BulkMode.manyToOne),
+          const SizedBox(width: 4),
+          _modeButton('Multi-Item 1-to-1', BulkMode.oneToOne),
+        ],
+      ),
+    );
+  }
+
+  Widget _modeButton(String label, BulkMode mode) {
+    bool isSelected = _mode == mode;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.white70)),
+      selected: isSelected,
+      onSelected: (val) => setState(() => _mode = mode),
+      selectedColor: Colors.orange,
+      backgroundColor: Colors.white10,
     );
   }
 
@@ -157,7 +163,7 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
               children: [
                 CircleAvatar(backgroundColor: Colors.orange, radius: 12, child: Text('${index + 1}', style: const TextStyle(fontSize: 10, color: Colors.white))),
                 const SizedBox(width: 8),
-                Text(_isOneToMany ? 'Receiver Detail' : 'Sender Detail', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(_getItemCardTitle(), style: const TextStyle(fontWeight: FontWeight.bold)),
                 const Spacer(),
                 if (_items.length > 1)
                   IconButton(
@@ -167,10 +173,10 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
               ],
             ),
             const Divider(),
-            _buildTextField(item.nameController, 'Name'),
-            _buildTextField(item.phoneController, 'Phone', keyboardType: TextInputType.phone),
             
-            if (_isOneToMany) ...[
+            if (_mode == BulkMode.oneToMany) ...[
+              _buildTextField(item.nameController, 'Receiver Name'),
+              _buildTextField(item.phoneController, 'Receiver Phone', keyboardType: TextInputType.phone),
               const Text('Destination Branch', style: TextStyle(color: Colors.grey, fontSize: 10)),
               DropdownButtonFormField<String>(
                 value: item.destinationBranchId,
@@ -180,21 +186,18 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
                 validator: (val) => val == null ? 'Required' : null,
               ),
               const SizedBox(height: 12),
+            ] else if (_mode == BulkMode.manyToOne) ...[
+              _buildTextField(item.nameController, 'Sender Name'),
+              _buildTextField(item.phoneController, 'Sender Phone', keyboardType: TextInputType.phone),
             ],
 
             _buildTextField(item.descController, 'Item Description (e.g. Sacks of Maize)'),
             
             Row(
               children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildTextField(item.qtyTypeController, 'Qty Type (Box, Kg, Pcs)'),
-                ),
+                Expanded(flex: 2, child: _buildTextField(item.qtyTypeController, 'Qty Type (Box, Kg)')),
                 const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: _buildTextField(item.qtyController, 'Total Qty', keyboardType: TextInputType.number),
-                ),
+                Expanded(flex: 1, child: _buildTextField(item.qtyController, 'Total Qty', keyboardType: TextInputType.number)),
               ],
             ),
 
@@ -206,7 +209,6 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
               ],
             ),
 
-            // Smart Calculation Summary
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
@@ -224,12 +226,7 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
                           controller: item.costController,
                           textAlign: TextAlign.right,
                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
-                          decoration: const InputDecoration(
-                            hintText: '0.00',
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            border: InputBorder.none,
-                          ),
+                          decoration: const InputDecoration(hintText: '0.00', isDense: true, border: InputBorder.none),
                           keyboardType: TextInputType.number,
                         ),
                       ),
@@ -244,6 +241,14 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
         ),
       ),
     );
+  }
+
+  String _getItemCardTitle() {
+    switch (_mode) {
+      case BulkMode.oneToMany: return 'Receiver Detail';
+      case BulkMode.manyToOne: return 'Sender Detail';
+      case BulkMode.oneToOne: return 'Goods Detail';
+    }
   }
 
   Widget _buildSummaryRow(String label, String value) {
@@ -288,20 +293,19 @@ class _BulkShipmentScreenState extends State<BulkShipmentScreen> {
       final authProvider = context.read<AuthProvider>();
       
       for (var item in _items) {
-        // Build a detailed description including qty and type
         final detailedDesc = "${item.descController.text} (${item.qtyController.text} ${item.qtyTypeController.text})";
 
         final shipment = Shipment(
           id: const Uuid().v4(),
           trackingNumber: shipmentProvider.generateTrackingNumber(branchName),
-          senderName: _isOneToMany ? _commonNameController.text : item.nameController.text,
-          senderPhone: _isOneToMany ? _commonPhoneController.text : item.phoneController.text,
-          receiverName: _isOneToMany ? item.nameController.text : _commonNameController.text,
-          receiverPhone: _isOneToMany ? item.phoneController.text : _commonPhoneController.text,
+          senderName: _mode == BulkMode.manyToOne ? item.nameController.text : _senderNameController.text,
+          senderPhone: _mode == BulkMode.manyToOne ? item.phoneController.text : _senderPhoneController.text,
+          receiverName: _mode == BulkMode.oneToMany ? item.nameController.text : _receiverNameController.text,
+          receiverPhone: _mode == BulkMode.oneToMany ? item.phoneController.text : _receiverPhoneController.text,
           itemDescription: detailedDesc,
           weight: item.totalWeight,
           originBranchId: authProvider.user?.branchId ?? '1',
-          destinationBranchId: _isOneToMany ? item.destinationBranchId! : _commonDestinationBranchId!,
+          destinationBranchId: _mode == BulkMode.oneToMany ? item.destinationBranchId! : _commonDestinationBranchId!,
           shippingCost: double.tryParse(item.costController.text) ?? 0.0,
           goodsValue: item.totalValue,
           currency: _currency,
