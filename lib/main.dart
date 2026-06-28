@@ -48,6 +48,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider.value(value: storageService),
         ChangeNotifierProvider.value(value: connectivityProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider(storageService: storageService)),
         ChangeNotifierProvider(create: (_) => BranchProvider(storageService: storageService)),

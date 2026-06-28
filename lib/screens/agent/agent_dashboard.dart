@@ -10,6 +10,7 @@ import '../../providers/shipment_provider.dart';
 import '../../providers/trip_provider.dart';
 import '../../models/trip.dart';
 import '../../models/shipment.dart';
+import '../../services/storage_service.dart';
 
 class AgentDashboard extends StatelessWidget {
   const AgentDashboard({super.key});
