@@ -14,6 +14,7 @@ class User {
   final UserRole role;
   final String? branchId;
   final bool isActive;
+  final bool mustChangePassword; // New field
 
   User({
     required this.id,
@@ -23,6 +24,7 @@ class User {
     required this.role,
     this.branchId,
     this.isActive = true,
+    this.mustChangePassword = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -34,6 +36,7 @@ class User {
       role: UserRole.values.firstWhere((e) => e.name == json['role']),
       branchId: json['branch_id'],
       isActive: json['is_active'] ?? true,
+      mustChangePassword: json['must_change_password'] ?? false,
     );
   }
 
@@ -46,6 +49,7 @@ class User {
       'role': role.name,
       'branch_id': branchId,
       'is_active': isActive,
+      'must_change_password': mustChangePassword,
     };
   }
 }

@@ -53,7 +53,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => BranchProvider(storageService: storageService)),
         ChangeNotifierProvider(create: (_) => ShipmentProvider(storageService: storageService)),
         ChangeNotifierProvider(create: (_) => TripProvider(storageService: storageService)),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider(storageService: storageService)),
         ChangeNotifierProvider(create: (_) => IncidentProvider(storageService: storageService)),
         ChangeNotifierProvider(create: (_) => CmsProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),

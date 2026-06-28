@@ -13,33 +13,35 @@ class SyncService {
     required this.storageService,
     required this.connectivityProvider,
   }) {
-    // Listen for connectivity changes to trigger sync
+    // We still listen for connectivity, but we only sync 'ready' items
     connectivityProvider.addListener(_onConnectivityChanged);
   }
 
   void _onConnectivityChanged() {
     if (connectivityProvider.isOnline && !_isSyncing) {
-      syncQueue();
+      syncReadyQueue();
     }
   }
 
-  Future<void> syncQueue() async {
+  // Called when internet returns OR when user manually triggers a sync
+  Future<void> syncReadyQueue() async {
     final queue = storageService.getSyncQueue();
-    if (queue.isEmpty) return;
+    final readyItems = queue.where((item) => item['status'] == 'ready').toList();
+    
+    if (readyItems.isEmpty || !connectivityProvider.isOnline) return;
 
     _isSyncing = true;
     final token = storageService.getToken();
 
-    for (int i = 0; i < queue.length; i++) {
-      final action = queue[i];
+    for (var action in readyItems) {
       try {
         await _processAction(action, token);
-        // If successful, we'll remove it after the loop or one by one
-        // One by one is safer if sync fails in the middle
-        await storageService.removeFromSyncQueue(0); 
-        i--; // Adjust index because we removed an item
+        // Successful sync, remove from the main queue using its ID
+        await storageService.removeFromSyncQueue(action['id']);
       } catch (e) {
-        // If an action fails, stop syncing (maybe server is down but internet is up)
+        // If an item fails, we stop to preserve order (if important) 
+        // or just log it and move to next
+        print('Sync failed for item ${action['id']}: $e');
         break;
       }
     }

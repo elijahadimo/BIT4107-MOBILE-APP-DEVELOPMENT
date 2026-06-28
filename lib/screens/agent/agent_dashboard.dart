@@ -20,11 +20,34 @@ class AgentDashboard extends StatelessWidget {
     final authProvider = context.read<AuthProvider>();
     final myShipments = shipmentProvider.getShipmentsByBranch(authProvider.user?.branchId ?? '');
     final shipmentsAtBranch = myShipments.where((s) => s.status == ShipmentStatus.arrived || s.status == ShipmentStatus.pending).length;
+    final syncQueue = context.watch<StorageService>().getSyncQueue();
+    final draftCount = syncQueue.where((item) => item['status'] == 'draft').length;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agent Dashboard'),
         actions: [
+          if (syncQueue.isNotEmpty)
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  onPressed: () => context.push('/sync-manager'),
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                ),
+                if (draftCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                      child: Text('$draftCount', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+                    ),
+                  ),
+              ],
+            ),
           IconButton(
             onPressed: () => context.push('/chat'),
             icon: const Icon(Icons.chat),

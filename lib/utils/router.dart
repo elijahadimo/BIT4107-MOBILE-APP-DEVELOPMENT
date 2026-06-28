@@ -23,6 +23,7 @@ import '../screens/asst_driver/asst_driver_dashboard.dart';
 import '../screens/asst_driver/delivery_screen.dart';
 import '../screens/customer/landing_page.dart';
 import '../screens/common/business_card_screen.dart';
+import '../screens/common/sync_manager_screen.dart';
 import '../models/user.dart';
 import '../models/shipment.dart';
 
@@ -68,6 +69,10 @@ class AppRouter {
       GoRoute(
         path: '/business-card',
         builder: (context, state) => const BusinessCardScreen(),
+      ),
+      GoRoute(
+        path: '/sync-manager',
+        builder: (context, state) => const SyncManagerScreen(),
       ),
       GoRoute(
         path: '/chat',

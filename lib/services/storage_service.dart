@@ -5,7 +5,7 @@ import '../models/user.dart';
 class StorageService {
   static const String _userKey = 'user_data';
   static const String _tokenKey = 'auth_token';
-  static const String _shipmentsKey = 'cached_shipments';
+  static const String _syncQueueKey = 'sync_queue';
 
   final SharedPreferences _prefs;
 
@@ -59,13 +59,15 @@ class StorageService {
     }
   }
 
-  static const String _syncQueueKey = 'sync_queue';
-
-  // ... existing methods ...
-
-  // Sync Queue
+  // Sync Queue Logic
+  // Statuses: 'draft' (editable), 'ready' (confirmed by user)
   Future<void> addToSyncQueue(Map<String, dynamic> action) async {
     List<dynamic> queue = getSyncQueue();
+    // Add metadata for tracking
+    action['id'] = DateTime.now().millisecondsSinceEpoch.toString();
+    action['status'] = 'draft'; 
+    action['timestamp'] = DateTime.now().toIso8601String();
+    
     queue.add(action);
     await _prefs.setString(_syncQueueKey, json.encode(queue));
   }
@@ -80,15 +82,39 @@ class StorageService {
     }
   }
 
-  Future<void> clearSyncQueue() async {
-    await _prefs.remove(_syncQueueKey);
-  }
-
-  Future<void> removeFromSyncQueue(int index) async {
+  Future<void> updateSyncQueueItem(String queueId, Map<String, dynamic> newPayload) async {
     List<dynamic> queue = getSyncQueue();
-    if (index < queue.length) {
-      queue.removeAt(index);
+    final index = queue.indexWhere((item) => item['id'] == queueId);
+    if (index != -1) {
+      queue[index]['payload'] = newPayload;
       await _prefs.setString(_syncQueueKey, json.encode(queue));
     }
+  }
+
+  Future<void> markItemAsReady(String queueId) async {
+    List<dynamic> queue = getSyncQueue();
+    final index = queue.indexWhere((item) => item['id'] == queueId);
+    if (index != -1) {
+      queue[index]['status'] = 'ready';
+      await _prefs.setString(_syncQueueKey, json.encode(queue));
+    }
+  }
+
+  Future<void> markAllAsReady() async {
+    List<dynamic> queue = getSyncQueue();
+    for (var item in queue) {
+      item['status'] = 'ready';
+    }
+    await _prefs.setString(_syncQueueKey, json.encode(queue));
+  }
+
+  Future<void> removeFromSyncQueue(String queueId) async {
+    List<dynamic> queue = getSyncQueue();
+    queue.removeWhere((item) => item['id'] == queueId);
+    await _prefs.setString(_syncQueueKey, json.encode(queue));
+  }
+
+  Future<void> clearSyncQueue() async {
+    await _prefs.remove(_syncQueueKey);
   }
 }
